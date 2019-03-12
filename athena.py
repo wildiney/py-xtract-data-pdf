@@ -1,9 +1,13 @@
-import time
+#!/usr/bin/python 
+
 import datetime
 from classes.xtract_nf_data import XtractData
 
-while True:
-  time.sleep(0.1)
-  print(datetime.datetime.now())
-  XtractData("./pdfs", "athena")
-  time.sleep(60*60)
+now = datetime.datetime.now()
+
+XtractData(
+    r"C:\\INDRA\\{0}\\Traduções\\Orçamentos".format(now.year),
+    "athena",
+    r"C:\\INDRA\\{0}\\Traduções\\relatorio.csv".format(now.year),
+    True
+    )

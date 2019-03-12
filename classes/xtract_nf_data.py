@@ -1,79 +1,107 @@
 import os
-import PyPDF2
 import re
-import pprint
-import json
+import PyPDF2
 import csv
 
 
 class XtractData:
-    def __init__(self, pdfs_directory, company):
+    def __init__(self, pdfs_directory, company, save_as, delete=False, repeat=False):
         self.pdfs_directory = pdfs_directory
         self.company = company
-        self.batchFiles()
-        pass
+        self.save_as = save_as
+        self.delete = delete
+        self.repeat = repeat
+        self.batch_files()
 
     def convert2text(self, file):
         file = open(file, 'rb')
-        pdfReader = PyPDF2.PdfFileReader(file)
-        pageObj = pdfReader.getPage(0)
-        text = self.cleanText(pageObj.extractText())
+        pdf_reader = PyPDF2.PdfFileReader(file)
+        page_obj = pdf_reader.getPage(0)
+        text = self.clean_text(page_obj.extractText())
         file.close()
         return text
 
-    def cleanText(self, text):
+    @staticmethod
+    def clean_text(text):
         text = text.replace('\n', '')
-        text = re.sub("\s\s+", " ", text)
+        text = re.sub(r"\s\s+", " ", text)
         text = text.strip()
         return text
 
     def athena_data(self, text):
         words = text.split(' ')
+        descritivo = ''
+        solicitante = ''
         laudas = 0
         lauda = 0.0
         subtotal = 0.0
+        total = 0.0
+        proposta = 0
+        data_proposta = 0
 
         for idx, word in enumerate(words):
-            indice = idx+1
+            indice = idx + 1
             if word == "Proposta:":
                 proposta = int(words[indice])
             if word == "Solicitante:":
-                solicitante = words[indice]
+                for i in range(10):
+                    if words[indice + i] != "Data:":
+                        solicitante = solicitante + " " + words[indice + i]
+                    else:
+                        break
             if word == "Data:":
-                dataProposta = words[indice]
+                data_proposta = words[indice]
+            if word == "Descritivo:":
+                for i in range(10):
+                    if words[indice + i] != "Tipo":
+                        descritivo = descritivo + " " + words[indice + i]
+                    else:
+                        break
             if word == "Laudas:":
                 laudas = int(words[indice])
             if word == "Lauda:":
-                indice = idx+2
-                lauda = float(words[indice].replace(",", '.'))
-            if word == "tradução:":
-                indice = idx+2
-                total = float(words[indice].replace(",", '.'))
-        if(laudas != 0 and lauda != 0):
-            subtotal = float(laudas)*float(lauda)
+                indice = idx + 2
+                words[indice] = words[indice].replace(".", '')
+                words[indice] = words[indice].replace(",", '.')
+                lauda = "{:.2f}".format(float(words[indice]))
+            if word == "total:" or word == "Projeto:" or word == "tradução:" or word == "Tradução:":
+                indice = idx + 2
+                words[indice] = words[indice].replace(".", '')
+                words[indice] = words[indice].replace(",", '.')
+                total = "{:.2f}".format(float(words[indice]))
+        if laudas != 0 and lauda != 0.0:
+            subtotal = "{:.2f}".format(float(laudas) * float(lauda))
 
-        data = {}
+        if (laudas != 0 and lauda != 0.0) and (subtotal != total):
+            warning = "CHECK THIS!"
+        else:
+            warning = ''
+
+        data = dict()
         data['Fornecedor'] = self.company.upper()
         data['Proposta'] = proposta
         data['Solicitante'] = solicitante
-        data['Data'] = dataProposta
+        data['Data'] = data_proposta
+        data['Descritivo'] = descritivo
         data['Laudas'] = laudas
-        data['Valor_Lauda'] = lauda
-        data['Subtotal'] = subtotal
-        data['Total'] = total
+        data['Valor_Lauda'] = str(lauda).replace(".", ",")
+        data['Subtotal'] = str(subtotal).replace(".", ",")
+        data['Total'] = str(total).replace(".", ",")
+        data['Observacoes'] = warning
 
         return data
 
-    def batchFiles(self):
+    def batch_files(self):
         files = os.listdir(self.pdfs_directory)
         data = {}
         for file in files:
-            text = self.convert2text(self.pdfs_directory+"/"+file)
+            text = self.convert2text(self.pdfs_directory + "/" + file)
             if self.company == "athena":
                 data = self.athena_data(text)
                 print(data)
-            #os.remove(self.pdfs_directory+"/"+file)
+            if self.delete is True:
+                os.remove(self.pdfs_directory + "/" + file)
 
-            with open("orcamentos.csv", 'a', newline='') as f:
-                w = csv.DictWriter(f, data.keys())
+            with open(self.save_as, 'a', newline='') as f:
+                w = csv.DictWriter(f, delimiter=';', fieldnames=data.keys())
                 w.writerow(data)

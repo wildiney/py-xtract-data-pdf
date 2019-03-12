@@ -1,3 +1,6 @@
 node_modules
 pdfs
 orcamentos.csv
+classes/__pycache__/
+classes/_pycache__/*
+.idea
