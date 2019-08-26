@@ -30,6 +30,7 @@ class XtractData:
 
     def athena_data(self, text):
         words = text.split(' ')
+        print(words)
         descritivo = ''
         solicitante = ''
         laudas = 0
@@ -42,7 +43,7 @@ class XtractData:
         print("=========================================================")
         for idx, word in enumerate(words):
             indice = idx + 1
-            if word == "Proposta":
+            if word == "Proposta:" or word == "Proposta":
                 for i in range(10):
                     if words[indice + i] != "Empresa":
                         proposta = proposta + words[indice + i]
@@ -52,7 +53,7 @@ class XtractData:
                         proposta = proposta.strip()
                     else:
                         break
-                print("proposta", proposta)
+                print("Proposta", proposta)
             if word == "Solicitante:" or word == "Solicitante":
                 for i in range(10):
                     if words[indice + i] == "Data" or words[indice + i] == "Data:" or words[indice + i] == "Empresa" or \
@@ -91,9 +92,21 @@ class XtractData:
 
             if word == "Lauda:":
                 indice = idx + 2
-                words[indice] = words[indice].replace(".", '')
-                words[indice] = words[indice].replace(",", '.')
-                lauda = "{:.2f}".format(float(words[indice]))
+                if words[indice] == "$":
+                    indice = idx + 3
+
+                for i in range(10):
+                    if words[indice+i] == "Valor":
+                        break
+                    else:
+                        lauda = str(lauda) + words[indice+i]
+
+                    lauda = lauda.replace(" ", '')
+                    lauda = lauda.replace(".", '')
+                    lauda = lauda.replace(",", '.')
+                    lauda = lauda.strip()
+                lauda = "{:.2f}".format(float(lauda)/100)
+                print("Valor da Lauda", lauda)
 
             if word == "Projeto:" or word == "Projeto":
                 for i in range(10):
@@ -126,8 +139,41 @@ class XtractData:
                             total = total.strip()
                 print("Total", total)
 
+            if word == "Traduções:":
+                for i in range(10):
+                    if words[indice + i] == "Prazo":
+                        break
+                    else:
+                        total = total + " " + words[indice + i]
+                        total = total.replace(":", "")
+                        total = total.replace(" ", "")
+                        total = total.replace("(", "")
+                        total = total.replace("Fechado", "")
+                        total = total.replace(")", "")
+                        total = total.replace("R$", "")
+                        total = total.strip()
+                print("Total", total)
+
+            if word == "Total:":
+                if words[indice - 2] == "Valor":
+                    for i in range(10):
+                        if words[indice + i] == "Prazo":
+                            break
+                        else:
+                            total = total + " " + words[indice + i]
+                            total = total.replace(":", "")
+                            total = total.replace(" ", "")
+                            total = total.replace("(", "")
+                            total = total.replace("Fechado", "")
+                            total = total.replace(")", "")
+                            total = total.replace("R$", "")
+                            total = total.strip()
+                print("Total", total)
+
         if laudas != 0 and lauda != 0.0:
             subtotal = "{:.2f}".format(float(laudas) * float(lauda))
+            subtotal = subtotal.replace(".", ",")
+            print("Subtotal", subtotal)
 
         if (laudas != 0 and lauda != 0.0) and (subtotal != total):
             warning = "CHECK THIS!"
@@ -146,7 +192,7 @@ class XtractData:
         data['Laudas'] = laudas
         data['Valor_Lauda'] = str(lauda).replace(".", ",")
         data['Subtotal'] = str(subtotal).replace(".", ",")
-        data['Total'] = str(total).replace(".", ",")
+        data['Total'] = "R$" + str(total).replace(".", ",")
         data['Observacoes'] = warning
 
         return data
