@@ -4,8 +4,15 @@ import PyPDF2
 import csv
 
 
-class XtractData:
-    def __init__(self, pdfs_directory, company, save_as, delete=False, repeat=False):
+class Xtractdata:
+    def __init__(
+            self,
+            pdfs_directory,
+            company,
+            save_as,
+            delete=False,
+            repeat=False
+    ):
         self.pdfs_directory = pdfs_directory
         self.company = company
         self.save_as = save_as
@@ -33,16 +40,19 @@ class XtractData:
         print(words)
         descritivo = ''
         solicitante = ''
-        laudas = 0
+        laudas = ''
         lauda = 0.0
         subtotal = 0.0
         total = ''
         proposta = ''
         data_proposta = ''
+
         print(" ")
         print("=========================================================")
         for idx, word in enumerate(words):
             indice = idx + 1
+
+            # PROPOSTA
             if word == "Proposta:" or word == "Proposta":
                 for i in range(10):
                     if words[indice + i] != "Empresa":
@@ -54,6 +64,8 @@ class XtractData:
                     else:
                         break
                 print("Proposta", proposta)
+
+            # SOLICITANTE
             if word == "Solicitante:" or word == "Solicitante":
                 for i in range(10):
                     if words[indice + i] == "Data" or words[indice + i] == "Data:" or words[indice + i] == "Empresa" or \
@@ -64,6 +76,8 @@ class XtractData:
                         solicitante = solicitante.replace(":", "")
                         solicitante = solicitante.strip()
                 print("Solicitante", solicitante)
+
+            # DATA DA PROPOSTA
             if word == "Data:" or word == "Data":
                 for i in range(10):
                     if words[indice + i] == "Descritivo" or words[indice + i] == "Descritivo:":
@@ -75,6 +89,7 @@ class XtractData:
                         data_proposta = data_proposta.strip()
                 print("Data da Proposta", data_proposta)
 
+            # DESCRITIVO
             if word == "Descritivo:" or word == "Descritivo":
                 for i in range(10):
                     if words[indice + i] == "Tipo" or words[indice + i] == "Tipo:":
@@ -86,10 +101,19 @@ class XtractData:
                         descritivo = descritivo.strip()
                 print("Descritivo", descritivo)
 
+            # LAUDAS
             if word == "Laudas:" or word == "Laudas":
-                laudas = int(words[indice])
+                for i in range(10):
+                    if words[indice + i] == "Valor" or words[indice + i] == "Valor:":
+                        break
+                    else:
+                        laudas = str(laudas) + " " + words[indice + i]
+                        laudas = laudas.replace(":", "")
+                        laudas = laudas.replace(" ", "")
+                        laudas = laudas.strip()
                 print("Laudas", laudas)
 
+            # VALOR DA LAUDA
             if word == "Lauda:":
                 indice = idx + 2
                 if words[indice] == "$":
@@ -105,15 +129,34 @@ class XtractData:
                     lauda = lauda.replace(".", '')
                     lauda = lauda.replace(",", '.')
                     lauda = lauda.strip()
-                lauda = "{:.2f}".format(float(lauda)/100)
+                lauda = "{:.2f}".format(float(lauda))
                 print("Valor da Lauda", lauda)
 
-            if word == "Projeto:" or word == "Projeto":
+            # VALOR TOTAL PALAVRA CHAVE PROJETOS
+            # if word == "Projeto:" or word == "Projeto":
+            #     for i in range(10):
+            #         if words[indice + i] == "Prazo":
+            #             break
+            #         else:
+            #             total = total + " " + words[indice + i]
+            #             total = total.replace(":", "")
+            #             total = total.replace(" ", "")
+            #             total = total.replace("(", "")
+            #             total = total.replace("Fechado", "")
+            #             total = total.replace(")", "")
+            #             total = total.replace("R$", "")
+            #             total = total.strip()
+            #     print("Total", total)
+
+            # VALOR TOTAL PALAVRA CHAVE TRADUÇÃO
+            if word == "Tradução:" or word == "Tradução" or word =="Projeto" or word == "Projeto:":
+
                 for i in range(10):
-                    if words[indice + i] == "Prazo":
+                    if words[indice + i] == "Prazo" or words[indice + i] == "Forma"  or words[indice + i] == "Simples":
                         break
                     else:
-                        total = total + " " + words[indice + i]
+                        total = str(total) + " " + words[indice + i]
+                        total = total.replace(",", ".")
                         total = total.replace(":", "")
                         total = total.replace(" ", "")
                         total = total.replace("(", "")
@@ -123,56 +166,40 @@ class XtractData:
                         total = total.strip()
                 print("Total", total)
 
-            if word == "Tradução:":
-                if words[indice - 2] == "a" and words[indice - 3] == "d":
-                    for i in range(10):
-                        if words[indice + i] == "Prazo":
-                            break
-                        else:
-                            total = total + " " + words[indice + i]
-                            total = total.replace(":", "")
-                            total = total.replace(" ", "")
-                            total = total.replace("(", "")
-                            total = total.replace("Fechado", "")
-                            total = total.replace(")", "")
-                            total = total.replace("R$", "")
-                            total = total.strip()
-                print("Total", total)
+            # if word == "Traduções:":
+            #     for i in range(10):
+            #         if words[indice + i] == "Prazo":
+            #             break
+            #         else:
+            #             total = total + " " + words[indice + i]
+            #             total = total.replace(":", "")
+            #             total = total.replace(" ", "")
+            #             total = total.replace("(", "")
+            #             total = total.replace("Fechado", "")
+            #             total = total.replace(")", "")
+            #             total = total.replace("R$", "")
+            #             total = total.strip()
+            #     print("Total", total)
 
-            if word == "Traduções:":
-                for i in range(10):
-                    if words[indice + i] == "Prazo":
-                        break
-                    else:
-                        total = total + " " + words[indice + i]
-                        total = total.replace(":", "")
-                        total = total.replace(" ", "")
-                        total = total.replace("(", "")
-                        total = total.replace("Fechado", "")
-                        total = total.replace(")", "")
-                        total = total.replace("R$", "")
-                        total = total.strip()
-                print("Total", total)
-
-            if word == "Total:":
-                if words[indice - 2] == "Valor":
-                    for i in range(10):
-                        if words[indice + i] == "Prazo":
-                            break
-                        else:
-                            total = total + " " + words[indice + i]
-                            total = total.replace(":", "")
-                            total = total.replace(" ", "")
-                            total = total.replace("(", "")
-                            total = total.replace("Fechado", "")
-                            total = total.replace(")", "")
-                            total = total.replace("R$", "")
-                            total = total.strip()
-                print("Total", total)
+            # if word == "Total:":
+            #     if words[indice - 2] == "Valor":
+            #         for i in range(10):
+            #             if words[indice + i] == "Prazo":
+            #                 break
+            #             else:
+            #                 total = total + " " + words[indice + i]
+            #                 total = total.replace(":", "")
+            #                 total = total.replace(" ", "")
+            #                 total = total.replace("(", "")
+            #                 total = total.replace("Fechado", "")
+            #                 total = total.replace(")", "")
+            #                 total = total.replace("R$", "")
+            #                 total = total.strip()
+            #     print("Total", total)
 
         if laudas != 0 and lauda != 0.0:
             subtotal = "{:.2f}".format(float(laudas) * float(lauda))
-            subtotal = subtotal.replace(".", ",")
+            #subtotal = subtotal.replace(".", ",")
             print("Subtotal", subtotal)
 
         if (laudas != 0 and lauda != 0.0) and (subtotal != total):
@@ -189,10 +216,10 @@ class XtractData:
         data['Solicitante'] = solicitante
         data['Data'] = data_proposta
         data['Descritivo'] = descritivo
-        data['Laudas'] = laudas
+        data['Laudas'] = str(laudas)
         data['Valor_Lauda'] = str(lauda).replace(".", ",")
         data['Subtotal'] = str(subtotal).replace(".", ",")
-        data['Total'] = "R$" + str(total).replace(".", ",")
+        data['Total'] = str(total).replace(".", ",")
         data['Observacoes'] = warning
 
         return data
