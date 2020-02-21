@@ -1,4 +1,5 @@
 node_modules
+venv
 pdfs
 orcamentos.csv
 classes/__pycache__/
